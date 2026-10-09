@@ -1,6 +1,6 @@
 FROM registry.cn-hangzhou.aliyuncs.com/jcleng/library-alpine:3.20.1
 
-ARG PHP_URL=https://gh-proxy.com/https://github.com/jcleng/staticphpbuild/releases/download/static-php_8.2_20261007042314/php-8.2_20261007042314
+ARG PHP_URL=https://github.com/jcleng/staticphpbuild/releases/download/static-php_8.2_20261007042314/php-8.2_20261007042314
 ARG https_proxy=
 ARG http_proxy=
 
