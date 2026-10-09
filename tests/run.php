@@ -20,4 +20,15 @@ $text='@交互机器人 /projects'; ok(trim(preg_replace('/^@[^\\s\\/]+\\s*/u','
 file_put_contents($dir.'/proxy-state.json', json_encode(['u'=>['project'=>['name'=>'A','path'=>$dir.'/a'],'session'=>['id'=>'abc','title'=>'t','file'=>$dir.'/x.jsonl']]]));
 $proxy=new \PiDingding\Proxy($s,'pi',5,$dir.'/proxy-state.json');
 $out=$proxy->handle('u','/history'); ok(str_contains($out,'hello'),'history output');
+file_put_contents($dir.'/y.jsonl', "{\"type\":\"session\",\"id\":\"def\",\"cwd\":\"$dir/a\"}\n".json_encode(['type'=>'message','message'=>['role'=>'assistant','content'=>[['type'=>'thinking','thinking'=>'secret-plan'],['type'=>'toolCall','name'=>'bash','arguments'=>['command'=>'rm -rf /']],['type'=>'toolResult','content'=>'raw-output'],['type'=>'text','text'=>'Answer here']]]])."\n");
+$h=$s->history($dir.'/y.jsonl');
+ok(str_contains($h[0]['content'],'Answer here'),'keep text block');
+ok(!str_contains(json_encode($h),'secret-plan'),'skip thinking');
+ok(!str_contains(json_encode($h),'raw-output'),'skip tool result');
+ok(!str_contains($h[0]['content'],'{'),'no json in history');
+file_put_contents($dir.'/proxy-state.json', json_encode(['u'=>['project'=>['name'=>'A','path'=>$dir.'/a'],'session'=>['id'=>'def','title'=>'t','file'=>$dir.'/y.jsonl']]]));
+$proxy2=new \PiDingding\Proxy($s,'pi',5,$dir.'/proxy-state.json');
+$md=$proxy2->handle('u','/history');
+ok(str_contains($md,'**'),'markdown history');
+ok(!str_contains($md,'toolCall'),'no toolCall json in markdown');
 echo "ok\n";

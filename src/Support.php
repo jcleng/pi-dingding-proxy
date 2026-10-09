@@ -24,6 +24,7 @@ final class Support {
         $title=$x['name']??$x['title']??'';
         if (!$title && is_file($file)) { foreach (array_slice(file($file, FILE_IGNORE_NEW_LINES|FILE_SKIP_EMPTY_LINES) ?: [], 0, 30) as $row) { $r=json_decode($row,true); $m=$r['message']??[]; if (($m['role']??'')==='user') { $c=$m['content']??''; $title=is_array($c)?$this->plainText($c):trim((string)$c); break; } } }
         $title=$this->plainText((string)$title); if (mb_strlen($title)>40) $title=mb_substr($title,0,40).'...';
+        if ($title==='') $title='未命名会话';
         return ['id'=>$x['id']??basename($file,'.jsonl'),'title'=>$title ?: '未命名会话','cwd'=>$x['cwd']??'','timestamp'=>$x['timestamp']??'','file'=>$file];
     }
     private function plainText(mixed $value): string {
@@ -32,8 +33,21 @@ final class Support {
     }
     public function history(string $file, int $limit=10): array {
         if (!is_file($file)) return []; $rows=file($file, FILE_IGNORE_NEW_LINES|FILE_SKIP_EMPTY_LINES) ?: []; $out=[];
-        foreach (array_slice($rows,-100) as $row) { $x=json_decode($row,true); $m=$x['message']??null; if (is_array($m) && isset($m['role'])) { $c=$m['content']??''; if (is_array($c)) $c=json_encode($c,JSON_UNESCAPED_UNICODE); $out[]=['role'=>$m['role'],'content'=>(string)$c]; } }
+        foreach (array_slice($rows,-200) as $row) { $x=json_decode($row,true); $m=$x['message']??null; if (!is_array($m) || !isset($m['role'])) continue; $text=$this->messageText($m['content']??''); if ($text==='') continue; $out[]=['role'=>(string)$m['role'],'content'=>$text]; }
         return array_slice($out,-$limit);
+    }
+    public function messageText(mixed $content): string {
+        if (is_string($content)) return $this->plainText($content);
+        if (!is_array($content)) return '';
+        $parts=[];
+        foreach ($content as $block) {
+            if (is_string($block)) { $p=$this->plainText($block); if($p!=='')$parts[]=$p; continue; }
+            if (!is_array($block)) continue;
+            $type=$block['type']??'';
+            if ($type==='text') { $p=$this->plainText($block['text']??''); if($p!=='')$parts[]=$p; }
+            elseif ($type==='image') { $parts[]='[图片]'; }
+        }
+        return trim(implode(' ', $parts));
     }
     public function buildPiCommand(string $bin, array $args=[]): array { return array_merge([$bin],$args); }
 }
