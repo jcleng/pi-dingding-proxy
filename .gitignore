@@ -1,2 +1,3 @@
 var/state.json
 var/state.json.tmp
+.env
