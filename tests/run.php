@@ -10,4 +10,8 @@ ok($s->project('A')['path']===$dir.'/a','project lookup');
 file_put_contents($dir.'/x.jsonl', "{\"type\":\"session\",\"id\":\"abc\",\"cwd\":\"$dir/a\"}\n".json_encode(['type'=>'message','message'=>['role'=>'user','content'=>'hello']])."\n");
 ok(count($s->sessions($dir.'/a'))===1,'sessions');
 $cmd=$s->buildPiCommand('echo',['--x']); ok($cmd[0]==='echo' && in_array('--x',$cmd),'command');
+$stateFile=$dir.'/state.json';
+file_put_contents($stateFile, json_encode(['u'=>['project'=>['name'=>'A','path'=>$dir.'/a'],'session'=>null]]));
+$state=json_decode(file_get_contents($stateFile), true); ok($state['u']['project']['name']==='A','persistent state');
+$text='@交互机器人 /projects'; ok(trim(preg_replace('/^@[^\\s\\/]+\\s*/u','',$text))==='/projects','mention prefix');
 echo "ok\n";
