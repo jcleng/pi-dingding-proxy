@@ -22,8 +22,8 @@ final class Support {
     private function readSession(string $file): array {
         $first = fgets($h=fopen($file,'r')); fclose($h); $x=json_decode((string)$first,true) ?: [];
         $title=$x['name']??$x['title']??'';
-        if (!$title && is_file($file)) { foreach (array_slice(file($file, FILE_IGNORE_NEW_LINES|FILE_SKIP_EMPTY_LINES) ?: [], 0, 30) as $row) { $r=json_decode($row,true); $m=$r['message']??[]; if (($m['role']??'')==='user') { $c=$m['content']??''; $title=is_array($c)?$this->plainText($c):trim((string)$c); break; } } }
-        $title=$this->plainText((string)$title); if (mb_strlen($title)>40) $title=mb_substr($title,0,40).'...';
+        if (!$title && is_file($file)) { foreach (array_slice(file($file, FILE_IGNORE_NEW_LINES|FILE_SKIP_EMPTY_LINES) ?: [], 0, 30) as $row) { $r=json_decode($row,true); $m=$r['message']??[]; if (($m['role']??'')==='user') { $title=$this->messageText($m['content']??''); break; } } }
+        $title=$this->messageText((string)$title); if (mb_strlen($title)>40) $title=mb_substr($title,0,40).'...';
         if ($title==='') $title='未命名会话';
         return ['id'=>$x['id']??basename($file,'.jsonl'),'title'=>$title ?: '未命名会话','cwd'=>$x['cwd']??'','timestamp'=>$x['timestamp']??'','file'=>$file];
     }

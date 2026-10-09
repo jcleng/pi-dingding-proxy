@@ -34,7 +34,7 @@ final class Proxy {
             if (!$session) return '请先用 /sessions 查看并用 /session <id> 选择会话。';
             $rows=$this->support->history($session['file']??'',10); if (!$rows) return '该会话暂无对话记录。';
             $labels=['user'=>'用户','assistant'=>'PI','toolResult'=>'工具结果','system'=>'系统'];
-            $lines=['### 会话 '.$session['id'],'最近 '.count($rows).' 条：'];
+            $lines=['### 会话 '.$session['id'],'**标题**：'.$session['title'],'最近 '.count($rows).' 条：'];
             foreach ($rows as $r) { $c=$r['content']; if (mb_strlen($c)>300) $c=mb_substr($c,0,300).'...'; $lines[]='**'.($labels[$r['role']]??$r['role']).'**：'.$c; }
             return implode("\n\n",$lines);
         }
