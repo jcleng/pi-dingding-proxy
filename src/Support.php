@@ -49,5 +49,12 @@ final class Support {
         }
         return trim(implode(' ', $parts));
     }
+    public function runningSessions(int $window=300): array {
+        $projects=[]; foreach($this->projects() as $p) $projects[$p['path']]=$p['name'];
+        $out=[]; $now=time();
+        $files=array_merge(glob(rtrim($this->sessionDir,'/').'/*/*.jsonl') ?: [], glob(rtrim($this->sessionDir,'/').'/*.jsonl') ?: []);
+        foreach ($files as $file) { if ($now-(int)@filemtime($file) > $window) continue; $s=$this->readSession($file); $out[]=['id'=>$s['id'],'title'=>$s['title'],'project'=>$projects[$s['cwd']]??$s['cwd'],'lastActive'=>date('Y-m-d H:i:s',(int)@filemtime($file))]; }
+        usort($out,fn($a,$b)=>strcmp($b['lastActive'],$a['lastActive'])); return $out;
+    }
     public function buildPiCommand(string $bin, array $args=[]): array { return array_merge([$bin],$args); }
 }

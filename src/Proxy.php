@@ -2,7 +2,7 @@
 namespace PiDingding;
 final class Proxy {
     private array $state=[];
-    public function __construct(private Support $support, private string $pi='pi', private int $timeout=600, private ?string $stateFile=null) {
+    public function __construct(private Support $support, private string $pi='pi', private int $timeout=600, private ?string $stateFile=null, private int $activeWindow=300) {
         if ($this->stateFile && is_file($this->stateFile)) $this->state=json_decode((string)file_get_contents($this->stateFile),true) ?: [];
     }
     private function saveState(): void {
@@ -20,8 +20,9 @@ final class Proxy {
     }
     public function handle(string $user,string $text): string {
         $text=$this->normalize($text); $state=$this->state[$user]??['project'=>null,'session'=>null];
-        if ($text==='/help') return "### 命令列表\n\n- `/projects` 获取项目列表\n- `/project <名称|路径>` 切换项目\n- `/project new <名称>` 创建新项目提示\n- `/sessions` 查看当前项目会话\n- `/session current` 查看当前会话\n- `/session <id>` 切换会话\n- `/history [id]` 查看最近对话\n\n选择项目后，直接发送文本即可与 PI 进行连续对话。";
+if ($text==='/help') return "### 命令列表\n\n- `/projects` 获取项目列表\n- `/project <名称|路径>` 切换项目\n- `/project new <名称>` 创建新项目提示\n- `/sessions` 查看当前项目会话\n- `/session current` 查看当前会话\n- `/session <id>` 切换会话\n- `/history [id]` 查看最近对话\n- `/running` 查看运行中的 session\n\n选择项目后，直接发送文本即可与 PI 进行连续对话。";
         if ($text==='/projects') { $rows=[]; foreach($this->support->projects() as $p) $rows[]='- '.$p['name'].' (`'.$p['path'].'`)'; return $rows?implode("\n",$rows):'暂无项目'; }
+        if ($text==='/running') { $ss=$this->support->runningSessions($this->activeWindow); if(!$ss)return'当前没有运行中的 session。'; $lines=['### 运行中的 session','']; foreach($ss as $r) $lines[]='- `'.$r['id'].'` **'.$r['title'].'** 项目：'.$r['project'].' 最后活动：'.$r['lastActive']; return implode("\n",$lines); }
         if (str_starts_with($text,'/project ')) { $q=trim(substr($text,9)); if(str_starts_with($q,'new ')) { return '创建项目请先在服务器创建目录后使用 /project <路径>，以避免误创建目录。'; } $p=$this->support->project($q); if(!$p) return '项目不存在'; $state['project']=$p; $state['session']=null; $this->state[$user]=$state; $this->saveState(); return '已切换项目：'.$p['name']; }
         if (!$state['project']) return '请先使用 /projects 查看并用 /project <名称> 选择项目。';
         if ($text==='/sessions') { $ss=$this->support->sessions($state['project']['path']); if(!$ss)return'暂无会话'; return implode("\n",array_map(fn($s)=>'- '.$s['id'].' ['.$s['title'].'] '.$s['timestamp'],$ss)); }

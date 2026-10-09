@@ -11,9 +11,9 @@ php -S 0.0.0.0:7764 router.php
 
 DingTalk callback URL: `http://host:7764/`.
 
-Environment: `DD_PORT`, `DD_APP_SECRET`, `DD_VERIFY_SIGNATURE`, `PI_BIN`, `PI_PROJECTS_FILE`, `PI_SESSION_DIR`, `PI_TIMEOUT`, `PI_STATE_FILE`.
+Environment: `DD_PORT`, `DD_APP_SECRET`, `DD_VERIFY_SIGNATURE`, `PI_BIN`, `PI_PROJECTS_FILE`, `PI_SESSION_DIR`, `PI_TIMEOUT`, `PI_STATE_FILE`, `PI_RUNNING_WINDOW`.
 
-Commands: `/help`, `/projects`, `/project <name|path>`, `/sessions`, `/session current`, `/session <id>`, `/history`. Select a project then send ordinary text for a PI prompt. State is maintained per DingTalk sender in `var/state.json`, so project/session selection survives requests and service restarts. Group-message robot mentions are stripped before command parsing.
+Commands: `/help`, `/projects`, `/project <name|path>`, `/sessions`, `/session current`, `/session <id>`, `/history`, `/running` (sessions active within the last `PI_RUNNING_WINDOW` seconds, default 300). Select a project then send ordinary text for a PI prompt. State is maintained per DingTalk sender in `var/state.json`, so project/session selection survives requests and service restarts. Group-message robot mentions are stripped before command parsing.
 
 For production use PHP-FPM or a process manager, HTTPS/reverse proxy, and a persistent state store. Do not commit DingTalk secrets.
 
