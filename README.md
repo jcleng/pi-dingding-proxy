@@ -22,3 +22,11 @@ For production use PHP-FPM or a process manager, HTTPS/reverse proxy, and a pers
 ```bash
 php tests/run.php
 ```
+
+## Docker
+
+```bash
+DD_APP_SECRET='your-secret' docker compose up -d --build
+```
+
+`docker-compose.yml` uses `network_mode: host` (port 7764), the Alpine base image, the static PHP 8.2 binary, and mounts the shared `opencode_root` volume plus `/home/jcleng/work/mywork/`. The PHP proxy expects `pi` to be reachable as `PI_BIN` inside the container.

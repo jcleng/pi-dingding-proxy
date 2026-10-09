@@ -1,0 +1,24 @@
+services:
+  pi-dingding-proxy:
+    build: .
+    image: pi-dingding-proxy:latest
+    container_name: pi-dingding-proxy
+    network_mode: host
+    restart: unless-stopped
+    environment:
+      DD_APP_SECRET: ${DD_APP_SECRET:-}
+      DD_VERIFY_SIGNATURE: ${DD_VERIFY_SIGNATURE:-1}
+      PI_BIN: ${PI_BIN:-pi}
+      PI_PROJECTS_FILE: ${PI_PROJECTS_FILE:-/root/.pi-web/projects.json}
+      PI_SESSION_DIR: ${PI_SESSION_DIR:-/root/.pi/agent/sessions}
+      PI_STATE_FILE: ${PI_STATE_FILE:-/root/.pi-dingding-proxy/state.json}
+      PI_TIMEOUT: ${PI_TIMEOUT:-600}
+    volumes:
+      - opencode_root:/root/
+      - /home/jcleng/work/mywork/:/home/jcleng/work/mywork/
+
+volumes:
+  # 与 pi agent 使用同一个 opencode_root 卷（mywork/docker-compose.yml 中声明）
+  opencode_root:
+    external: true
+    name: mywork_opencode_root

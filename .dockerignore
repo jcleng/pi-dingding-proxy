@@ -1,0 +1,8 @@
+.git
+.gitignore
+var/
+docs/
+tests/
+Dockerfile
+docker-compose.yml
+*.log
