@@ -10,6 +10,7 @@ ok($s->project('A')['path']===$dir.'/a','project lookup');
 file_put_contents($dir.'/x.jsonl', "{\"type\":\"session\",\"id\":\"abc\",\"cwd\":\"$dir/a\"}\n".json_encode(['type'=>'message','message'=>['role'=>'user','content'=>'hello']])."\n");
 ok(count($s->sessions($dir.'/a'))===1,'sessions');
 ok(array_key_exists('title',$s->sessions($dir.'/a')[0]),'session title');
+$long=$s->sessions($dir.'/a')[0]['title']; ok(strlen($long)<100 && !str_contains($long,'[') && !str_contains($long,'{'),'short plain title');
 $cmd=$s->buildPiCommand('echo',['--x']); ok($cmd[0]==='echo' && in_array('--x',$cmd),'command');
 $stateFile=$dir.'/state.json';
 file_put_contents($stateFile, json_encode(['u'=>['project'=>['name'=>'A','path'=>$dir.'/a'],'session'=>null]]));
