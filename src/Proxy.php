@@ -27,7 +27,16 @@ final class Proxy {
         if ($text==='/sessions') { $ss=$this->support->sessions($state['project']['path']); if(!$ss)return'暂无会话'; return implode("\n",array_map(fn($s)=>'- '.$s['id'].' ['.$s['title'].'] '.$s['timestamp'],$ss)); }
         if ($text==='/session current') return $state['session'] ? '当前会话：'.$state['session']['id'] : '当前未指定会话';
         if (str_starts_with($text,'/session ')) { $id=trim(substr($text,9)); foreach($this->support->sessions($state['project']['path']) as $s) if(str_starts_with($s['id'],$id)){ $state['session']=$s;$this->state[$user]=$state; $this->saveState(); return'已切换会话：'.$s['id']; } return'会话不存在'; }
-        if ($text==='/history') return '历史记录请先选择会话。';
+        if ($text==='/history' || str_starts_with($text,'/history ')) {
+            $id=trim(substr($text,8)); $id=ltrim($id,' /');
+            $session=$state['session'];
+            if ($id!=='') { $session=null; foreach ($this->support->sessions($state['project']['path']) as $s) if (str_starts_with($s['id'],$id)) { $session=$s; break; } }
+            if (!$session) return '请先用 /sessions 查看并用 /session <id> 选择会话。';
+            $rows=$this->support->history($session['file']??'',10); if (!$rows) return '该会话暂无对话记录。';
+            $lines=['会话 '.$session['id'].' 最近 '.count($rows).' 条：'];
+            foreach ($rows as $r) { $c=preg_replace('/\\s+/u',' ',trim($r['content'])); if (mb_strlen($c)>200) $c=mb_substr($c,0,200).'...'; $lines[]='- '.$r['role'].'：'.$c; }
+            return implode("\n",$lines);
+        }
         $this->state[$user]=$state; $this->saveState(); return $this->execute($text,$state['project']['path'],$state['session']['file']??null);
     }
 }

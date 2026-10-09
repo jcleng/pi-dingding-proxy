@@ -1,5 +1,6 @@
 <?php
 require __DIR__ . '/../src/Support.php';
+require __DIR__ . '/../src/Proxy.php';
 use PiDingding\Support;
 function ok($x,$m){if(!$x) throw new Exception($m);}
 $dir=sys_get_temp_dir().'/pdp_'.bin2hex(random_bytes(3)); mkdir($dir.'/a',0777,true);
@@ -16,4 +17,7 @@ $stateFile=$dir.'/state.json';
 file_put_contents($stateFile, json_encode(['u'=>['project'=>['name'=>'A','path'=>$dir.'/a'],'session'=>null]]));
 $state=json_decode(file_get_contents($stateFile), true); ok($state['u']['project']['name']==='A','persistent state');
 $text='@交互机器人 /projects'; ok(trim(preg_replace('/^@[^\\s\\/]+\\s*/u','',$text))==='/projects','mention prefix');
+file_put_contents($dir.'/proxy-state.json', json_encode(['u'=>['project'=>['name'=>'A','path'=>$dir.'/a'],'session'=>['id'=>'abc','title'=>'t','file'=>$dir.'/x.jsonl']]]));
+$proxy=new \PiDingding\Proxy($s,'pi',5,$dir.'/proxy-state.json');
+$out=$proxy->handle('u','/history'); ok(str_contains($out,'hello'),'history output');
 echo "ok\n";
