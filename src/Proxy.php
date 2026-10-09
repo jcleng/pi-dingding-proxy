@@ -24,7 +24,7 @@ final class Proxy {
         if ($text==='/projects') { $rows=[]; foreach($this->support->projects() as $p) $rows[]='- '.$p['name'].' (`'.$p['path'].'`)'; return $rows?implode("\n",$rows):'暂无项目'; }
         if (str_starts_with($text,'/project ')) { $q=trim(substr($text,9)); if(str_starts_with($q,'new ')) { return '创建项目请先在服务器创建目录后使用 /project <路径>，以避免误创建目录。'; } $p=$this->support->project($q); if(!$p) return '项目不存在'; $state['project']=$p; $state['session']=null; $this->state[$user]=$state; $this->saveState(); return '已切换项目：'.$p['name']; }
         if (!$state['project']) return '请先使用 /projects 查看并用 /project <名称> 选择项目。';
-        if ($text==='/sessions') { $ss=$this->support->sessions($state['project']['path']); if(!$ss)return'暂无会话'; return implode("\n",array_map(fn($s)=>'- '.$s['id'].' '.$s['timestamp'],$ss)); }
+        if ($text==='/sessions') { $ss=$this->support->sessions($state['project']['path']); if(!$ss)return'暂无会话'; return implode("\n",array_map(fn($s)=>'- '.$s['id'].' ['.$s['title'].'] '.$s['timestamp'],$ss)); }
         if ($text==='/session current') return $state['session'] ? '当前会话：'.$state['session']['id'] : '当前未指定会话';
         if (str_starts_with($text,'/session ')) { $id=trim(substr($text,9)); foreach($this->support->sessions($state['project']['path']) as $s) if(str_starts_with($s['id'],$id)){ $state['session']=$s;$this->state[$user]=$state; $this->saveState(); return'已切换会话：'.$s['id']; } return'会话不存在'; }
         if ($text==='/history') return '历史记录请先选择会话。';

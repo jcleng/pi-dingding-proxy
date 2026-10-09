@@ -21,7 +21,9 @@ final class Support {
     }
     private function readSession(string $file): array {
         $first = fgets($h=fopen($file,'r')); fclose($h); $x=json_decode((string)$first,true) ?: [];
-        return ['id'=>$x['id']??basename($file,'.jsonl'),'cwd'=>$x['cwd']??'','timestamp'=>$x['timestamp']??'','file'=>$file];
+        $title=$x['name']??$x['title']??'';
+        if (!$title && is_file($file)) { foreach (array_slice(file($file, FILE_IGNORE_NEW_LINES|FILE_SKIP_EMPTY_LINES) ?: [], 0, 30) as $row) { $r=json_decode($row,true); $m=$r['message']??[]; if (($m['role']??'')==='user') { $c=$m['content']??''; $title=is_array($c)?json_encode($c,JSON_UNESCAPED_UNICODE):trim((string)$c); break; } } }
+        return ['id'=>$x['id']??basename($file,'.jsonl'),'title'=>$title ?: '未命名会话','cwd'=>$x['cwd']??'','timestamp'=>$x['timestamp']??'','file'=>$file];
     }
     public function history(string $file, int $limit=10): array {
         if (!is_file($file)) return []; $rows=file($file, FILE_IGNORE_NEW_LINES|FILE_SKIP_EMPTY_LINES) ?: []; $out=[];
