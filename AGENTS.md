@@ -71,11 +71,37 @@
 ## Docker 部署
 
 - 基础镜像：`registry.cn-hangzhou.aliyuncs.com/jcleng/library-alpine:3.20.1`
-- PHP：静态二进制 `https://github.com/jcleng/staticphpbuild/releases/download/static-php_8.2_20261007042314/php-8.2_20261007042314`（含 curl/mbstring/openssl/pcntl/posix，`proc_open` 可用）
+- PHP：静态二进制 `https://gh-proxy.com/https://github.com/jcleng/staticphpbuild/releases/download/static-php_8.2_20261007042314/php-8.2_20261007042314`（gh-proxy 加速；含 curl/mbstring/openssl/pcntl/posix，`proc_open` 可用）
 - 网络：`network_mode: host`（宿主 7764 端口）
 - 卷：`opencode_root:/root/`（external，实际名 `mywork_opencode_root`，与 pi agent 共享配置和会话）+ `/home/jcleng/work/mywork/:/home/jcleng/work/mywork/`（使 projects.json 里的路径可见）
-- **容器内没有 node/pi**：容器只承载 PHP 代理；`pi` 需通过 `PI_BIN` 指定可达方式（构建时已装 `docker-cli`，可挂 `/var/run/docker.sock` 后用 `docker exec opencode pi ...` 委托执行）。
-- 构建需代理时：`docker build --network host --build-arg https_proxy=http://192.168.195.18:20171 --build-arg http_proxy=http://192.168.195.18:20171 .`
+- **容器内没有 node/pi**：容器只承载 PHP 代理；`pi` 需通过 `PI_BIN` 指定可达方式（当前镜像未装 docker-cli，委托执行需自行挂 docker.sock 并安装 CLI，或其他方式提供 `pi`）。
+- 本地构建需代理时：`docker build --network host --build-arg https_proxy=http://192.168.195.18:20171 --build-arg http_proxy=http://192.168.195.18:20171 .`
+
+## CI 镜像构建（GitHub Actions）
+
+使用 `jcleng/action-sync-images` 仓库的 [`build-repo.yml`](https://github.com/jcleng/action-sync-images/actions/workflows/build-repo.yml) workflow：从 Git 仓库 clone 指定分支 → `docker build` → 推送阿里云镜像仓库 → 创建 GitHub Release（附 `release.txt` 和 `Dockerfile`）。
+
+触发方式（gh CLI，走代理）：
+
+```bash
+HTTPS_PROXY=http://192.168.195.18:20171 HTTP_PROXY=http://192.168.195.18:20171 gh workflow run build-repo.yml \
+  -R jcleng/action-sync-images \
+  -f arg_repo_url=https://github.com/jcleng/pi-dingding-proxy \
+  -f arg_branch_name=main \
+  -f arg_username=pi-dingding-proxy \
+  -f arg_name=latest \
+  -f arg_aliyunurl=registry.cn-hangzhou.aliyuncs.com \
+  -f arg_aliyunuser=jcleng
+```
+
+构建结果（2026-10-09 验证）：
+
+- Run：https://github.com/jcleng/action-sync-images/actions/runs/37916317354 （success）
+- 镜像：`registry.cn-hangzhou.aliyuncs.com/jcleng/pi-dingding-proxy-latest:latest`
+- Digest：`sha256:04f6e6f5dfd4c35bd833194a997ca6fbfc4b2c84769e41f94e1f348083573d9d`
+- Release：https://github.com/jcleng/action-sync-images/releases/tag/pi-dingding-proxy-latest
+
+同仓库其他 workflow：`sync-images-dockerHub-example..yml`（镜像 pull→push 同步，不构建）、`build-Dockerfile.yml`（按 Dockerfile 的 HTTP 地址构建）。
 
 ## 开发规范
 
