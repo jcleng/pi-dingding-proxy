@@ -29,4 +29,4 @@ php tests/run.php
 DD_APP_SECRET='your-secret' docker compose up -d --build
 ```
 
-`docker-compose.yml` uses `network_mode: host` (port 7764), the Alpine base image, the static PHP 8.2 binary, and mounts the shared `opencode_root` volume plus `/home/jcleng/work/mywork/`. The PHP proxy expects `pi` to be reachable as `PI_BIN` inside the container.
+`docker-compose.yml` uses `network_mode: host` (port 7764), a Debian bookworm / Node 24 base image with the `pi` CLI (`@earendil-works/pi-coding-agent`) and a static PHP 8.2 binary baked in, and mounts the shared `opencode_root` volume plus `/home/jcleng/work/mywork/`. The `pi` CLI is available inside the container as `PI_BIN` (default `pi`); `pi_models.json`/`pi_mcp.json` are mounted over `/root/.pi/agent/models.json` and `/root/.pi/agent/mcp.json` to match the opencode container's configuration.

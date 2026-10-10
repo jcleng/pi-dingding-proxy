@@ -22,7 +22,7 @@
 ## 目录结构
 
 ```text
-├── Dockerfile              # Alpine 基础镜像 + 静态 PHP 8.2 二进制
+├── Dockerfile              # Node 24 基础镜像 + 内置 pi CLI + 静态 PHP 8.2
 ├── docker-compose.yml      # network_mode: host；挂 opencode_root 与 mywork 目录
 ├── router.php              # php -S 入口
 ├── public/index.php        # 回调处理主逻辑（签名校验、命令分发、回复）
@@ -70,11 +70,12 @@
 
 ## Docker 部署
 
-- 基础镜像：`registry.cn-hangzhou.aliyuncs.com/jcleng/library-alpine:3.20.1`
+- 基础镜像：`registry.cn-hangzhou.aliyuncs.com/jcleng/library-node:24`（Debian bookworm + Node 24，满足 pi engines >=22.19）
 - PHP：静态二进制 `https://gh-proxy.com/https://github.com/jcleng/staticphpbuild/releases/download/static-php_8.2_20261007042314/php-8.2_20261007042314`（gh-proxy 加速；含 curl/mbstring/openssl/pcntl/posix，`proc_open` 可用）
 - 网络：`network_mode: host`（宿主 7764 端口）
 - 卷：`opencode_root:/root/`（external，实际名 `mywork_opencode_root`，与 pi agent 共享配置和会话）+ `/home/jcleng/work/mywork/:/home/jcleng/work/mywork/`（使 projects.json 里的路径可见）
-- **容器内没有 node/pi**：容器只承载 PHP 代理；`pi` 需通过 `PI_BIN` 指定可达方式（当前镜像未装 docker-cli，委托执行需自行挂 docker.sock 并安装 CLI，或其他方式提供 `pi`）。
+- **镜像内置 node/pi**：基础镜像为 `registry.cn-hangzhou.aliyuncs.com/jcleng/library-node:24`（Debian bookworm + Node 24），构建时 `npm i -g @earendil-works/pi-coding-agent` 安装 `pi` CLI，并内置静态 PHP 8.2。容器内可直接执行 `pi -p --mode text --no-extensions --no-mcp [--session <file>] <prompt>`（cwd 为项目路径）。
+- **配置来源**：`/root/.pi`（模型、认证、sessions）由 opencode_root 卷提供；但 `models.json`/`mcp.json` 在 opencode 容器里是 bind mount 覆盖的，因此代理容器同样需要挂载 `pi_models.json`、`pi_mcp.json` 到对应路径，否则模型列表为空。
 - 本地构建需代理时：`docker build --network host --build-arg https_proxy=http://192.168.195.18:20171 --build-arg http_proxy=http://192.168.195.18:20171 .`
 
 ## CI 镜像构建（GitHub Actions）
