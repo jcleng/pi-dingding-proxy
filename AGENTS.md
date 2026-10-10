@@ -15,7 +15,7 @@
 
 - 语言：PHP 8.2（静态二进制，见下方 Dockerfile）
 - 运行：PHP 内置 Web Server（`php -S 0.0.0.0:7764 router.php`）
-- PI Agent：本机 `pi` CLI（node 脚本，非本容器安装）
+- PI Agent：`pi` CLI（Docker 镜像内置 node 24 + pi CLI；非容器运行时用本机 `pi`）
 - 依赖：仅 PHP 扩展 `curl` / `json` / `mbstring`，无 Composer 依赖
 - 测试：`php tests/run.php`（自写断言脚本，输出 `ok` 即通过）
 
@@ -23,7 +23,7 @@
 
 ```text
 ├── Dockerfile              # Node 24 基础镜像 + 内置 pi CLI + 静态 PHP 8.2
-├── docker-compose.yml      # network_mode: host；挂 opencode_root 与 mywork 目录
+├── docker-compose.yml      # 直接用已构建镜像；host 网络；挂 opencode_root/mywork/models+mc
 ├── router.php              # php -S 入口
 ├── public/index.php        # 回调处理主逻辑（签名校验、命令分发、回复）
 ├── src/
@@ -43,6 +43,7 @@
 | session 文件 | `/root/.pi/agent/sessions/<转义路径>/*.jsonl` | `PI_SESSION_DIR` |
 | 用户状态 | `/root/.pi-dingding-proxy/state.json` | `PI_STATE_FILE` |
 | PI 命令 | `pi` | `PI_BIN` |
+| `/running` 活跃窗口 | 300 秒（文件 mtime 距今） | `PI_RUNNING_WINDOW` |
 
 ## 命令集（钉钉消息，支持 `@机器人` 前缀自动剥离）
 
@@ -55,6 +56,7 @@
 /session current             查看当前会话
 /session <id前缀>            切换会话
 /history [id]                最近 10 条对话（Markdown，去 thinking/toolCall/toolResult JSON）
+/running                    查看窗口内（默认 300s）活跃的 session（文件 mtime）
 （其他文本）                  作为 prompt 调用 pi -p --mode text，按当前 project/session 连续对话
 ```
 
@@ -67,9 +69,11 @@
 - **钉钉签名**：`base64(hmac_sha256(timestamp + "\n" + appSecret))`，与 header `sign` 比对；`DD_VERIFY_SIGNATURE=0` 可关闭。
 - **回复**：Markdown 类型，`title` + `text`，POST 到回调携带的 `sessionWebhook`。
 - **路径安全**：项目仅允许来自 `projects.json` 中已注册且目录存在的路径。
+- **`/running`**：遍历 session 目录下所有 `*.jsonl`，按文件 mtime 距今是否小于窗口（`PI_RUNNING_WINDOW`，默认 300s）判定活跃，关联项目名与最后活动时间。
 
 ## Docker 部署
 
+- compose 直接使用已构建镜像：`image: registry.cn-hangzhou.aliyuncs.com/jcleng/pi-dingding-proxy-latest`（`build:` 已移除；如需本地构建可用 `docker build .`）
 - 基础镜像：`registry.cn-hangzhou.aliyuncs.com/jcleng/library-node:24`（Debian bookworm + Node 24，满足 pi engines >=22.19）
 - PHP：静态二进制 `https://gh-proxy.com/https://github.com/jcleng/staticphpbuild/releases/download/static-php_8.2_20261007042314/php-8.2_20261007042314`（gh-proxy 加速；含 curl/mbstring/openssl/pcntl/posix，`proc_open` 可用）
 - 网络：`network_mode: host`（宿主 7764 端口）
