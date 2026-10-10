@@ -12,11 +12,12 @@ services:
       PI_SESSION_DIR: ${PI_SESSION_DIR:-/root/.pi/agent/sessions}
       PI_STATE_FILE: ${PI_STATE_FILE:-/root/.pi-dingding-proxy/state.json}
       PI_TIMEOUT: ${PI_TIMEOUT:-600}
+      PI_RUNNING_WINDOW: ${PI_RUNNING_WINDOW:-300}
     volumes:
-      # 共享 opencode_root 卷：提供 /root 下的 pi 配置、models、sessions 与项目数据
+      # 与 pi agent 共享配置、认证、session（容器内已含 node + pi CLI）
       - opencode_root:/root/
-      # 让 projects.json 里的项目路径可见；并覆盖 pi 的模型/工具配置（与 opencode 容器一致）
       - /home/jcleng/work/mywork/:/home/jcleng/work/mywork/
+      # 卷内 models.json/mcp.json 为空文件，需用真实配置覆盖（与 opencode 容器一致）
       - /home/jcleng/work/mywork/pi_models.json:/root/.pi/agent/models.json:ro
       - /home/jcleng/work/mywork/pi_mcp.json:/root/.pi/agent/mcp.json:ro
 
